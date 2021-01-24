@@ -25,10 +25,14 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.gmail.kamionorato.baristatrainer"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
-    }
+    },
+    "facebookScheme": "fb749307889043076",
+    "facebookAppId": "749307889043076",
+    "facebookDisplayName": "Barista Trainer"
   }
 }
