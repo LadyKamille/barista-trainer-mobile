@@ -1,16 +1,17 @@
 import React, { useState }  from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import * as Facebook from 'expo-facebook';
 
-import getEnvVars from '../environment';
-const { facebookAppId } = getEnvVars();
+import getEnvVars from '../../environment';
+import { useMutation } from '@apollo/client';
+import { LOGIN_MUTATION } from './schema';
+const { apiUrl, facebookAppId } = getEnvVars();
 
 const Login = () => {
   const [isLoggedIn, setLoggedInStatus] = useState(false);
   const [userData, setUserData] = useState(null);
 
   const login = async () => {
-    debugger;
     try {
       await Facebook.initializeAsync({
         appId: facebookAppId.toString(),
@@ -30,6 +31,7 @@ const Login = () => {
         Alert.alert('Logged in!', `Hi ${(await response.json()).name}!`);
         setLoggedInStatus(true);
         setUserData(response);
+        await facebookLoginSuccess();
       } else {
         Alert.alert(`Facebook Login Error: ${type}`);
       }
@@ -38,34 +40,50 @@ const Login = () => {
     }
   };
 
+  const facebookLoginSuccess = async () => {
+    try {
+      const response = await fetch(`${ apiUrl }/auth/facebook/callback`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      });
+      return response;
+    } catch(error) {
+      console.log('error', error);
+      return error;
+    }
+  };
+
+  const loginSuccess = () => {
+    const [login] = useMutation(LOGIN_MUTATION, {
+      variables: {
+        email: formState.email,
+        password: formState.password
+      },
+      onCompleted: ({ login }) => {
+        localStorage.setItem(AUTH_TOKEN, login.token);
+      }
+    });
+  };
+
   const logout = () => {
     setLoggedInStatus(false);
     setUserData(null);
   };
 
   return (
-    <View style={styles.container}>
-      <Text>Login or Sign Up with Facebook</Text>
-      {
-        isLoggedIn && userData ?
-          <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-            <Text style={{ color: "#fff" }}>Logout</Text>
-          </TouchableOpacity> :
-          <TouchableOpacity style={styles.loginBtn} onPress={login}>
-            <Text style={{ color: "#fff" }}>Login with Facebook</Text>
-          </TouchableOpacity>
-      }
-    </View>
+    isLoggedIn && userData ?
+      <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+        <Text style={{ color: "#fff" }}>Logout</Text>
+      </TouchableOpacity> :
+      <TouchableOpacity style={styles.loginBtn} onPress={login}>
+        <Text style={{ color: "#fff" }}>Login with Facebook</Text>
+      </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    height: '100%',
-    backgroundColor: '#e9ebee',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   loginBtn: {
     backgroundColor: '#4267b2',
     paddingVertical: 10,
@@ -77,8 +95,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
-    position: "absolute",
-    bottom: 0
   },
 });
 
